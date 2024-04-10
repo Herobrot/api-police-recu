@@ -52,7 +52,7 @@ const connections = new Map();
 
 app.get("/users/", async (req, res) => {
     try{
-        const activeUsers = await Promise.all(Array.from(connections.keys()).map(async (_idUser) => {
+        await Promise.all(Array.from(connections.keys()).map(async (_idUser) => {
             const user = await User.findById(_idUser);
             return {
                 _idUser,
