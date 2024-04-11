@@ -1,22 +1,22 @@
-import { Router } from "express";
-import signale from "signale";
-import jwt from "jsonwebtoken";
-import User from "../models/userSchema.js";
-import bcrypt from "bcrypt";
+const { Router } = require("express");
+const signale = require("signale");
+const jwt = require("jsonwebtoken");
+const User = require("../models/userSchema.js");
+const bcrypt = require("bcrypt");
 
-const jwtSecretKey = process.env.SECRET_JWT;
+const jwtSecretKey = process.env.JWT_SECRET_KEY;
 const userRouter = Router();
 
 function createToken(user) {
-    const payload = {userId: user._id};
+    const payload = {_id: user._id};
 
     const expiration = '1h';
-
+    console.log("secretKey:" + jwtSecretKey + "|expiration:" + expiration + "|payload:" + payload);
     return jwt.sign(payload, jwtSecretKey, { expiresIn: expiration });
 }
 
 function authenticateToken(req, res, next) {
-    const token = req.headers['authorization'];
+    const token = req.headers['Authorization'];
 
     if (!token) {
         return res.status(401).json({ error: 'Sin autorización' });
@@ -31,7 +31,24 @@ function authenticateToken(req, res, next) {
     });
 }
 
-userRouter.get("/:_id", authenticateToken, async (req, res) => {
+userRouter.get("/:role", async(req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+        const users = await User.find({role: req.params.role}).skip(skip).limit(limit);
+        if (users){
+            return res.status(200).json(users);
+        } else {
+            return res.status(404).json({ message: "No existen usuarios" });
+        }
+    } catch (error){
+        signale.fatal(new Error("Error al obtener los usuarios:"));
+        return res.status(500).json({ error: error.message });
+    }
+})
+
+userRouter.get("/user/:_id", authenticateToken, async (req, res) => {
     try {
         const usuario = await User.findById({_id: req.params._id});
         if (usuario){
@@ -82,13 +99,15 @@ userRouter.post("/", async (req, res) => {
         const userExist = await User.findOne({badgeNumber: user.badgeNumber});
 
         if (userExist) {
+            signale.warn("Ya existe un usuario con ese numero de placa");
             return res.status(400).json({ message: "Ya existe un usuario con ese numero de placa" });
         }
 
         const result = await user.save();
         if (result) {
-            const token = createToken(result);
-            return res.status(201).json({ token, result });
+            const token = createToken(user);
+            signale.warn("Token creado");
+            return res.status(201).json({ token, user });
         } else {
           return res.status(500).json({ error: 'Error en la inserción de datos' });
         }
@@ -134,4 +153,4 @@ userRouter.delete("/user/:_id", async (req, res) => {
     }
 });
 
-export default userRouter;
+module.exports = userRouter;

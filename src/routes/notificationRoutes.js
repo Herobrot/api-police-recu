@@ -1,6 +1,6 @@
-import { Router } from "express";
-import Notifications from "../models/notificationsSchema";
-import signale from "signale";
+const { Router } = require("express");
+const Notifications = require("../models/notificationsSchema");
+const signale = require("signale");
 
 const notificationRouter = Router();
 
@@ -79,4 +79,4 @@ notificationRouter.delete("/notification/:_id", async (req, res) => {
     }
 });
 
-export default notificationRouter;
+module.exports = notificationRouter;

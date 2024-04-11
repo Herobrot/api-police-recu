@@ -1,6 +1,6 @@
-import { Router } from "express";
-import Warnings from "../models/warningSchema";
-import signale from "signale";
+const { Router } = require("express");
+const Warnings = require("../models/warningSchema");
+const signale = require("signale");
 
 const warningRouter = Router();
 
@@ -77,4 +77,4 @@ warningRouter.delete("/:_id", async (req, res) => {
     }
 });
 
-export default warningRouter;
+module.exports = warningRouter;

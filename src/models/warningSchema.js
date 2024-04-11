@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+const { Schema, model } = require("mongoose");
 
 const ECategoryWarning ={
     "Robo" : "Robo",
@@ -27,4 +27,4 @@ const warningsSchema = new Schema({
 
 const Warnings = model("Warnings", warningsSchema);
 
-export default Warnings;
+module.exports = Warnings;

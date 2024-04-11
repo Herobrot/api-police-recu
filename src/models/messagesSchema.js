@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+const { Schema, model } = require("mongoose");
 
 const messagesSchema = new Schema({
     message: { type: String, required: true },
@@ -8,4 +8,4 @@ const messagesSchema = new Schema({
 
 const Messages = model("Messages", messagesSchema);
 
-export default Messages;
+module.exports = Messages;

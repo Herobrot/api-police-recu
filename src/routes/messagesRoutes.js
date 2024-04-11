@@ -1,6 +1,6 @@
-import { Router } from "express";
-import Messages from "../models/messagesSchema";
-import signale from "signale";
+const { Router } = require("express");
+const Messages = require("../models/messagesSchema");
+const signale = require("signale");
 
 const messagesRouter = Router();
 
@@ -13,6 +13,28 @@ messagesRouter.get("/", async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
+
+messagesRouter.get("/user/:_id", async (req, res) => {
+    try {
+        const messages = await Messages.aggregate([ 
+            {
+              $lookup: {
+                from: "Users",
+                localField: "_idUser",
+                foreignField: "_id",
+                as: "mensajesPorUsuario"
+                }
+            },
+            {
+              $match : {"_idUser": req.params._id }
+            },
+            ]);
+        return res.status(200).json(messages);
+    } catch (error) {
+        signale.fatal(new Error("Error al obtener los mensajes:"));
+        return res.status(500).json({ error: error.message });
+    }
+})
 
 messagesRouter.get("/message/:_id", async (req, res) => {
     try {
@@ -67,4 +89,4 @@ messagesRouter.delete("/message/:_id", async (req, res) => {
     }
 });
 
-export default messagesRouter;
+module.exports = messagesRouter;

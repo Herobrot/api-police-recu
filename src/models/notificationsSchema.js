@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+const { Schema, model } = require("mongoose");
 
 const ECategoryNotifications = {
     "Recordatorio" : "Recordatorio",
@@ -17,4 +17,4 @@ const notificationsSchema = new Schema({
 
 const Notifications = model("Notifications", notificationsSchema);
 
-export default Notifications;
+module.exports = Notifications;

@@ -1,19 +1,20 @@
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
-import signale from "signale";
-import http from "http";
-import WebSocket from "ws";
-import "dotenv/config";
-import mongoose from "mongoose";
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const signale = require("signale");
+const http = require("http");
+const WebSocket = require("ws");
+require("dotenv/config");
+const mongoose = require("mongoose");
 
-import messagesRouter from "./routes/messagesRoutes";
-import userRouter from "./routes/userRoutes";
-import notificationRouter from "./routes/notificationRoutes";
-import warningRouter from "./routes/warningRoutes";
+const userRouter = require("./routes/userRoutes");
+const messagesRouter = require("./routes/messagesRoutes");
+const notificationRouter = require("./routes/notificationRoutes");
+const warningRouter = require("./routes/warningRoutes");
 
-import Messages from "./models/messagesSchema";
-import User from "./models/userSchema";
+const Messages = require("./models/messagesSchema");
+const User = require("./models/userSchema");
+
 
 const app = express();
 const uri = process.env.MONGODB_URI;
@@ -50,6 +51,7 @@ app.use("/warnings", warningRouter);
 const pendingRequests = new Map();
 const connections = new Map();
 
+//long polling
 app.get("/users/", async (req, res) => {
     try{
         await Promise.all(Array.from(connections.keys()).map(async (_idUser) => {
@@ -57,6 +59,8 @@ app.get("/users/", async (req, res) => {
             return {
                 _idUser,
                 name: user ? user.name : 'Desconocido',
+                lastName: user ? user.lastName : 'Desconocido',
+                role: user ? user.role : 'Desconocido',
                 connected: true
             };
         }));
@@ -67,9 +71,10 @@ app.get("/users/", async (req, res) => {
     }
 })
 
+//short polling
 app.get("/users/:_id", async (req, res) => {
     try{
-        const _idUser = parseInt(req.params._id);
+        const _idUser = req.params._id;
         console.log(_idUser);
 
         if(connections.has(_idUser)) {
@@ -107,7 +112,7 @@ wss.on('connection', async (ws) => {
                 currentUserId = data._idUser;
                 connections.set(currentUserId, ws);
                 
-                await new Messages(data).save();
+                await new Messages(data.message).save();
     
                 connections.forEach((client, clientId) => {
                     if(client.readyState === WebSocket.OPEN) {
@@ -125,10 +130,10 @@ wss.on('connection', async (ws) => {
             connections.delete(currentUserId);
             console.log(currentUserId);
             console.log(pendingRequests);
-            const userRequests = pendingRequests.get(parseInt(currentUserId));
+            const userRequests = pendingRequests.get(currentUserId);
             if(userRequests) {
                 userRequests.json({ connected: false });
-                pendingRequests.delete(parseInt(currentUserId));
+                pendingRequests.delete(currentUserId);
             }
         }
     });
