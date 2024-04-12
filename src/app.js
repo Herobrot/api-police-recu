@@ -100,7 +100,7 @@ wss.on('connection', async (ws) => {
         })
     } catch (error) {
         signale.fatal(new Error("Error al crear el usuario:"));
-        return res.status(500).json({ error: error.message });
+        ws.send({ error: error.message });
     }
 
     ws.on('message', async (message) => {
@@ -111,12 +111,12 @@ wss.on('connection', async (ws) => {
             if(data._idUser) {
                 currentUserId = data._idUser;
                 connections.set(currentUserId, ws);
-                
+                signale.warn("Conectado => " + currentUserId);
                 await new Messages(data.message).save();
     
                 connections.forEach((client, clientId) => {
                     if(client.readyState === WebSocket.OPEN) {
-                        client.send(message);
+                        client.send(JSON.stringify(message));
                     }
                 });
             }

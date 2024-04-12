@@ -11,7 +11,6 @@ function createToken(user) {
     const payload = {_id: user._id};
 
     const expiration = '1h';
-    console.log("secretKey:" + jwtSecretKey + "|expiration:" + expiration + "|payload:" + payload);
     return jwt.sign(payload, jwtSecretKey, { expiresIn: expiration });
 }
 
@@ -31,12 +30,25 @@ function authenticateToken(req, res, next) {
     });
 }
 
-userRouter.get("/:role", async(req, res) => {
+userRouter.get("/:_id", async(req, res) => {
+    try {
+        const user = await User.findById(req.params._id);
+        if(user){
+            return res.status(200).json(user);
+        } else {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+    } catch (error) {
+        
+    }    
+})
+
+userRouter.get("/roles/:role", async(req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
         const skip = (page - 1) * limit;
-        const users = await User.find({role: req.params.role}).skip(skip).limit(limit);
+        const users = await User.find({role: req.params.role}).nor({_id: req.query._id}).skip(skip).limit(limit);
         if (users){
             return res.status(200).json(users);
         } else {
@@ -65,6 +77,7 @@ userRouter.get("/user/:_id", authenticateToken, async (req, res) => {
 userRouter.post("/user", async (req, res) => {
     try {
         const { badgeNumber, password } = req.body;
+        signale.warn("Contraseña: " + password, "Placa: " + badgeNumber);
         const userFound = await User.findOne({badgeNumber: badgeNumber});
 
         if (!userFound) {
