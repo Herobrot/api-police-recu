@@ -14,16 +14,6 @@ warningRouter.get("/", async (req, res) => {
     }
 });
 
-warningRouter.get("/:role", async (req, res) => {
-    try{
-        const warnings = await Warnings.find({roleUser: req.params.role});
-        return res.status(200).json(warnings);
-    } catch (error) {
-        signale.fatal(new Error("Error al obtener los avisos:"));
-        return res.status(500).json({ error: error.message });
-    }
-});
-
 warningRouter.get("/warning/:_id", async (req, res) => {
     try {
         const aviso = await Warnings.findById({_id: req.params._id});

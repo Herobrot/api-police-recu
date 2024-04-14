@@ -50,16 +50,18 @@ app.use("/warnings", warningRouter);
 
 const pendingRequests = new Map();
 const connections = new Map();
+let ids = [];
 
 //long polling
 app.get("/warnings/users/:_id", async (req, res) => {
     try{
         const _idUser = req.params._id;
-        console.log(_idUser);
 
         if(connections.has(_idUser)) {
             res.status(200).json({ connected: false })
         } else {
+            ids.push(_idUser);
+            console.log(ids);
             if (!pendingRequests.has(_idUser)) {
                 pendingRequests.set(_idUser, res);
             }
@@ -73,13 +75,12 @@ app.get("/warnings/users/:_id", async (req, res) => {
 app.get("/warnings/:role", async (req, res) => {
     try{
         const warnings = await Warnings.find({roleUser: req.params.role});
-        pendingRequests.forEach((res, _id) => {
-            if(connections.has(_id)) {
-                res.status(200).json(warnings);
-            } else {
-                res.status(200).json({ connected: false });
-            }
-        })
+        ids.forEach((_id) => {
+            pendingRequests.get(_id).status(200).json(warnings);
+            pendingRequests.delete(_id);
+        });
+        ids = [];
+        return res.status(200).json({ message: "Respuestas enviadas"});
     } catch (error) {
         signale.fatal(new Error("Error al obtener los avisos:"));
         return res.status(500).json({ error: error.message });
@@ -116,6 +117,7 @@ wss.on('connection', async (ws) => {
         if(currentUserId) {            
             console.log(currentUserId);
             console.log(pendingRequests);
+            connections.delete(currentUserId);
         }
     });
 });
