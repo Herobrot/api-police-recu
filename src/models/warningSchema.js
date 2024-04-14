@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const { Erole } = require("./userSchema");
 
 const ECategoryWarning ={
     "Robo" : "Robo",
@@ -22,7 +23,7 @@ const warningsSchema = new Schema({
     date: { type: Date, required: true },
     category: { type: String, required: true, enum: ECategoryWarning },
     status: { type: String, required: true, enum: EStatusWarning },
-    roleUser: { type: String, required: true }
+    roleUser: { type: String, required: true, enum: Erole }
 });
 
 const Warnings = model("Warnings", warningsSchema);

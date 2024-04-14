@@ -14,7 +14,7 @@ const warningRouter = require("./routes/warningRoutes");
 
 const Messages = require("./models/messagesSchema");
 const User = require("./models/userSchema");
-
+const Warnings = require("./models/warningSchema");
 
 const app = express();
 const uri = process.env.MONGODB_URI;
@@ -52,27 +52,7 @@ const pendingRequests = new Map();
 const connections = new Map();
 
 //long polling
-app.get("/users/", async (req, res) => {
-    try{
-        await Promise.all(Array.from(connections.keys()).map(async (_idUser) => {
-            const user = await User.findById(_idUser);
-            return {
-                _idUser,
-                name: user ? user.name : 'Desconocido',
-                lastName: user ? user.lastName : 'Desconocido',
-                role: user ? user.role : 'Desconocido',
-                connected: true
-            };
-        }));
-
-    } catch (error) {
-        signale.fatal(new Error("Error al obtener los usuarios:"));
-        return res.status(500).json({ error: error.message });
-    }
-})
-
-//short polling
-app.get("/users/:_id", async (req, res) => {
+app.get("/warnings/users/:_id", async (req, res) => {
     try{
         const _idUser = req.params._id;
         console.log(_idUser);
@@ -85,9 +65,25 @@ app.get("/users/:_id", async (req, res) => {
             }
         }
     } catch (error) {
-        signale.fatal(new Error("Error al obtener el usuario:"));
-        return res.status(500).json({ error: error.message });
+        signale.fatal(new Error("Error al guardar el usuario de manera colgada:"));
+        return res.status(500).json({ message: "No se pudo colgar el usuario", error: error.message });
     }
+});
+
+app.get("/warnings/:role", async (req, res) => {
+    try{
+        const warnings = await Warnings.find({roleUser: req.params.role});
+        pendingRequests.forEach((res, _id) => {
+            if(connections.has(_id)) {
+                res.status(200).json(warnings);
+            } else {
+                res.status(200).json({ connected: false });
+            }
+        })
+    } catch (error) {
+        signale.fatal(new Error("Error al obtener los avisos:"));
+        return res.status(500).json({ error: error.message });
+    }    
 })
 
 wss.on('connection', async (ws) => {
@@ -117,15 +113,9 @@ wss.on('connection', async (ws) => {
     });
 
     ws.on('close', () => {
-        if(currentUserId) {
-            connections.delete(currentUserId);
+        if(currentUserId) {            
             console.log(currentUserId);
             console.log(pendingRequests);
-            const userRequests = pendingRequests.get(currentUserId);
-            if(userRequests) {
-                userRequests.json({ connected: false });
-                pendingRequests.delete(currentUserId);
-            }
         }
     });
 });
