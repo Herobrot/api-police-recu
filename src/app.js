@@ -91,17 +91,8 @@ app.get("/users/:_id", async (req, res) => {
 })
 
 wss.on('connection', async (ws) => {
-    let currentUserId = null;
+    let currentUserId;
 
-    try{
-        const messages = await Messages.find();
-        messages.forEach((message) => {
-            ws.send(JSON.stringify(message));
-        })
-    } catch (error) {
-        signale.fatal(new Error("Error al crear el usuario:"));
-        ws.send({ error: error.message });
-    }
 
     ws.on('message', async (message) => {
         try{
@@ -112,10 +103,10 @@ wss.on('connection', async (ws) => {
                 currentUserId = data._idUser;
                 connections.set(currentUserId, ws);
                 signale.warn("Conectado => " + currentUserId);
-                await new Messages(data.message).save();
+                await new Messages(data).save();
     
                 connections.forEach((client, clientId) => {
-                    if(client.readyState === WebSocket.OPEN) {
+                    if(client.readyState === WebSocket.OPEN && clientId !== currentUserId) {
                         client.send(JSON.stringify(message));
                     }
                 });

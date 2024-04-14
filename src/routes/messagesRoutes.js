@@ -14,29 +14,6 @@ messagesRouter.get("/", async (req, res) => {
     }
 });
 
-messagesRouter.get("/user/:_id", async (req, res) => {
-    try {
-        const messages = await Messages.aggregate([ 
-            {
-              $lookup: {
-                from: "User",
-                localField: "_idUser",
-                foreignField: "_id",
-                as: "mensajesPorUsuario"
-                }
-            },
-            {
-              $match : {"_idUser": req.params._id }
-            },
-            ]);
-        signale.warn(messages);
-        return res.status(200).json(messages);
-    } catch (error) {
-        signale.fatal(new Error("Error al obtener los mensajes:"));
-        return res.status(500).json({ error: error.message });
-    }
-})
-
 messagesRouter.get("/message/:_id", async (req, res) => {
     try {
         const message = await Messages.findById({_id: req.params._id});

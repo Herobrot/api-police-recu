@@ -3,6 +3,7 @@ const signale = require("signale");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userSchema.js");
 const bcrypt = require("bcrypt");
+const { Types } = require("mongoose");
 
 const jwtSecretKey = process.env.JWT_SECRET_KEY;
 const userRouter = Router();
@@ -56,6 +57,52 @@ userRouter.get("/roles/:role", async(req, res) => {
         }
     } catch (error){
         signale.fatal(new Error("Error al obtener los usuarios:"));
+        return res.status(500).json({ error: error.message });
+    }
+})
+
+userRouter.get("/messages/user/:_id", async(req, res) => {
+    try {
+        const _idUser = new Types.ObjectId(req.params._id);
+        const messages = await User.aggregate([
+            {
+                $lookup: {
+                    from: "messages",
+                    localField: "_id",
+                    foreignField: "_idUser",
+                    as: "messages"
+                }
+            },
+            {
+                $match: {
+                    _id: _idUser
+                }
+            },
+            {
+                $unwind: {
+                    path: "$messages",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    message: "$messages.message",
+                    date: "$messages.date"
+                }
+            },
+            {
+                $sort: {
+                    "messages.date": -1
+                }
+            }
+        ]);
+        if(messages && messages.length > 0 || messages[0].messages != null){
+            return res.status(200).json(messages);
+        } else {
+            return res.status(404).json({ message: "No existen mensajes" });
+        }
+    } catch (error) {
+        signale.fatal(new Error("Error al obtener los mensajes:"));
         return res.status(500).json({ error: error.message });
     }
 })
