@@ -28,17 +28,6 @@ warningRouter.get("/warning/:_id", async (req, res) => {
     }
 });
 
-warningRouter.post("/", async (req, res) => {
-    try {
-        const aviso = new Warnings(req.body);
-        await aviso.save();
-        return res.status(201).json({ message: "Aviso creado exitosamente" });
-    } catch (error) {
-        signale.fatal(new Error("Error al crear el aviso:"));
-        return res.status(500).json({ error: error.message });
-    }
-});
-
 warningRouter.put("/message/:_id", async (req, res) => {
     try {
         const result = await Warnings.findByIdAndUpdate(req.params._id, req.body, {new: true});

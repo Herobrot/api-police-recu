@@ -105,6 +105,57 @@ userRouter.get("/messages/user/:_id", async(req, res) => {
         signale.fatal(new Error("Error al obtener los mensajes:"));
         return res.status(500).json({ error: error.message });
     }
+});
+
+userRouter.get("/notifications/user/:_id", async (req, res) => {
+    try {
+        const _idUser = new Types.ObjectId(req.params._id);
+        const notifications = await User.aggregate([
+            {
+                $lookup: {
+                    from: "notifications",
+                    localField: "_id",
+                    foreignField: "_idUser",
+                    as: "notifications"
+                }
+            },
+            {
+                $match: {
+                    _id: _idUser
+                }
+            },
+            {
+                $unwind: {
+                    path: "$notifications",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    title: "$notifications.title",
+                    body: "$notifications.body",
+                    date: "$notifications.date",
+                    category: "$notifications.category",
+                    categoryUser: "$notifications.categoryUser"
+                }
+            },
+            {
+                $sort: {
+                    "notifications.date": -1
+                }
+            }
+        ]);
+
+        if(notifications && notifications.length > 0){
+            return res.status(200).json(notifications);
+        }
+        else{
+            return res.status(404).json({ message: "No existen notificaciones" });
+        }
+    } catch (error) {
+        signale.fatal(new Error("Error al obtener las notificaciones:"));
+        return res.status(500).json({ error: error.message });
+    }
 })
 
 userRouter.get("/user/:_id", authenticateToken, async (req, res) => {

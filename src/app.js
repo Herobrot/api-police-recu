@@ -60,9 +60,9 @@ app.get("/warnings/users/:_id", async (req, res) => {
         if(connections.has(_idUser)) {
             res.status(200).json({ connected: false })
         } else {
-            ids.push(_idUser);
             console.log(ids);
             if (!pendingRequests.has(_idUser)) {
+                ids.push(_idUser);
                 pendingRequests.set(_idUser, res);
             }
         }
@@ -85,6 +85,22 @@ app.get("/warnings/:role", async (req, res) => {
         signale.fatal(new Error("Error al obtener los avisos:"));
         return res.status(500).json({ error: error.message });
     }    
+});
+
+app.post("/warnings", async (req, res) => {
+    try{
+        const warning = new Warnings(req.body);
+        await warning.save();
+        ids.forEach((_id) => {
+            pendingRequests.get(_id).status(201).json(warning);
+            pendingRequests.delete(_id);
+        })
+        ids = [];
+        return res.status(201).json(warning);
+    } catch (error) {
+        signale.fatal(new Error("Error al registrar la advertencia:"));
+        return res.status(500).json({ error: error.message });
+    }
 })
 
 wss.on('connection', async (ws) => {

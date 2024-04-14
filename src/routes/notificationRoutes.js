@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const Notifications = require("../models/notificationsSchema");
 const signale = require("signale");
+const { Types } = require("mongoose");
 
 const notificationRouter = Router();
 
@@ -44,9 +45,17 @@ notificationRouter.get("/user/:_id", async (req, res) => {
 
 notificationRouter.post("/", async (req, res) => {
     try {
-        const notification = new Notifications(req.body);
+        const _idUser = new Types.ObjectId(req.body._idUser);
+
+        const notification = new Notifications({
+            title: req.body.title,
+            body: req.body.body,
+            date: req.body.date,
+            category: req.body.category,
+            _idUser: _idUser
+        });
         await notification.save();
-        return res.status(201).json({ message: "Notificacion creada exitosamente" });
+        return res.status(201).json(notification);
     } catch (error) {
         signale.fatal(new Error("Error al crear la notificacion:"));
         return res.status(500).json({ error: error.message });
